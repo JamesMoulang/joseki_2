@@ -1,1 +1,1 @@
-"# joseki_2" 
+# joseki_2
