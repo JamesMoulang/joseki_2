@@ -27,7 +27,13 @@ class Mote extends GridDweller {
 		}
 		this.position = this.position.add(this.velocity.times(this.game.delta));
 		super.update();
-		
+		if (this.cell == null) {
+			// we just went off the edge!
+			if (this.position.x < 0) this.position.x += this.game.width;
+			if (this.position.x > this.game.width) this.position.x -= this.game.width;
+			if (this.position.y < 0) this.position.y += this.game.height;
+			if (this.position.y > this.game.height) this.position.y -= this.game.height;
+		}
 	}
 
 

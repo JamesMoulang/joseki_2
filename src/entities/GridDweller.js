@@ -12,7 +12,7 @@ class GridDweller extends Entity {
 	}
 
 	update() {
-		const cell = this.grid.getCellFromWorldPosition(this.position);
+		const cell = this.grid.getCellFromWorldPosition(this.position, false);
 		if (cell != this.cell) {
 			this.cell = cell;
 		}

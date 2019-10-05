@@ -25,12 +25,14 @@ class Grid {
 		});
 	}
 
-	getCell(x, y) {
+	getCell(x, y, exists=true) {
 		if (!this.cells[x]) {
 			this.cells[x] = {};
 		}
 
 		if (!this.cells[x][y]) {
+			if (!exists) return null;
+
 			this.cells[x][y] = new Cell(
 				x,
 				y,
@@ -42,11 +44,12 @@ class Grid {
 		return this.cells[x][y];
 	}
 
-	getCellFromWorldPosition(pos) {
+	getCellFromWorldPosition(pos, exists=true) {
 		const toPos = pos.minus(this.position);
 		return this.getCell(
 			Math.floor(toPos.x / this.size),
-			Math.floor(toPos.y / this.size)
+			Math.floor(toPos.y / this.size),
+			exists
 		);
 	}
 }
