@@ -22,7 +22,7 @@ class Menu extends State {
 
 	update() {
 		super.update();
-		this.game.debug('menu!');
+		this.game.state.switchState('main');
 	}
 
 	render() {

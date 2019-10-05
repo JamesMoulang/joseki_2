@@ -3,7 +3,7 @@ import States from './States';
 
 class Game extends Joseki.Game {
 	constructor() {
-		super('root', States, 60, 1216, 1344, 16);
+		super('root', States, 60, 1024, 1024, 16);
 		this.ignoreFocus = true;
 	}
 }

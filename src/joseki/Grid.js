@@ -9,6 +9,14 @@ class Grid {
 		this.cells = {};
 	}
 
+	populate(w, h) {
+		for (var x = 0; x < w; x++) {
+			for (var y = 0; y < h; y++) {
+				this.getCell(x, y);
+			}
+		}
+	}
+
 	each(callback) {
 		_.each(this.cells, (column) => {
 			_.each(column, (cell) => {
