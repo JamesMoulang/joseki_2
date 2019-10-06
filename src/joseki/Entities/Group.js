@@ -30,6 +30,12 @@ class Group extends Entity {
 		return entity;
 	}
 
+	unshift(entity) {
+		entity.group = this;
+		this.entities.unshift(entity);
+		return entity;
+	}
+
 	remove(entity) {
 		this.entities = _.without(this.entities, entity);
 	}

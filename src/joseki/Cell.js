@@ -4,6 +4,7 @@ class Cell {
 		this.y = y;
 		this.position = position;
 		this.size = size;
+		this.dwellers = [];
 	}
 }
 

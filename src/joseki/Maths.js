@@ -23,6 +23,16 @@ class Maths {
 		}
 	}
 
+	static wrap(value, min, max) {
+		while (value < min) {
+			value = max - (min - value);
+		}
+		while (value > max) {
+			value = min + (value - max);
+		}
+		return value;
+	}
+
 	static towardsValue(value, amount, target) {
 		if (value > target) {
 			if (value - amount < target) {

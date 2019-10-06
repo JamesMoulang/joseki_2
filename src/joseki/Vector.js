@@ -28,7 +28,7 @@ class Vector {
 		return new Vector(
 			Math.random() - 0.5,
 			Math.random() - 0.5,
-			Math.random() - 0.5
+			0
 		).normalised();
 	}
 

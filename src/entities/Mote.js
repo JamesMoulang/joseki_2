@@ -1,32 +1,123 @@
 import GridDweller from './GridDweller';
 import Vector from '../joseki/Vector';
+import Maths from '../joseki/Maths';
+import TrailDust from './TrailDust';
 
 class Mote extends GridDweller {
 	constructor(main, canvas, position) {
 		super(main, canvas, position);
 		this.velocity = new Vector(0, 0);
 
+		this.token = 'WHITE';
+
+		this.energy = 12;
+		this.size = 4;
+
 		this.brownian = {
-			stretch: 128,
-			radius: 64,
-			force: 0.0001,
+			stretch: 16,
+			radius: 36,
+			force: 0.001,
 			max_speed: 0.1,
+			angle: 0,
+			angle_displace_min: -0.8,
+			angle_displace_max: 0.8,
+			displace_vector: this.getDisplaceVector(0),
 		};
+
+		this.maxConnectionForce = 3;
+		this.frictionConst = 0.01;
+
+		this.tint = this.game.textColor;
+
+		this.distanceTravelled = 0;
+
+		this.trailSpawnDistance = 16;
+		this.trailEntities = [];
+		this.trailBufferLength = 100;
+		this.trailEntitiesIndex = -1;
+	}
+
+	connect(s2) {
+		super.connect(s2);
+		this.masterConnector = true;
+		this.selectable = false;
+		s2.selectable = false;
+		this.connection = s2;
+		s2.connection = this;
+		// this.connectTargetPoint = this.position.lerp(s2.position, 0.5);
+	}
+
+	getDisplaceVector(rad) {
+		return new Vector(
+			Math.cos(rad),
+			Math.sin(rad)
+		).normalised();
+	}
+
+	updateTrail() {
+		if (this.distanceTravelled >= this.trailSpawnDistance) {
+			this.distanceTravelled = 0;
+			// get trail entity
+			this.trailEntitiesIndex++;
+			if (this.trailEntitiesIndex >= this.trailBufferLength) {
+				this.trailEntitiesIndex = 0;
+			}
+
+			if (this.trailEntities[this.trailEntitiesIndex]) {
+				this.trailEntities[this.trailEntitiesIndex].reset(this.position, this.size, this.tint);
+			} else {
+				this.trailEntities.push(new TrailDust(this.main, this.position, this.size, this.tint));
+			}
+		}
 	}
 
 	update() {
+		if (this.showTrail) {
+			this.updateTrail();
+		}
+
 		// brownian motion
 		// circle pos
+		this.brownian.angle += Maths.randomRange(
+			this.brownian.angle_displace_min,
+			this.brownian.angle_displace_max
+		);
+		if (this.brownian.angle < 0) this.brownian.angle += 2 * Math.PI;
+		if (this.brownian.angle > 2 * Math.PI) this.brownian.angle -= 2 * Math.PI;
+
 		this.circle_pos = this.position.add(this.velocity.normalised().times(this.brownian.stretch));
-		this.circle_edge = this.circle_pos.add(Vector.Random().times(this.brownian.radius));
+		this.circle_edge = this.circle_pos.add(this.getDisplaceVector(this.brownian.angle).times(this.brownian.radius));
 		// towards vector
 		this.towards = this.circle_edge.minus(this.position).normalised();
-		this.velocity = this.velocity.add(this.towards.times(this.brownian.force * this.game.delta));
-		if (this.velocity.magnitude() > this.brownian.max_speed) {
-			this.velocity = this.velocity.normalised().times(this.brownian.max_speed);
+
+		if (this.towards) this.velocity = this.velocity.add(this.towards.times(this.brownian.force * this.game.delta));
+		// if (this.velocity.magnitude() > this.brownian.max_speed) {
+		// 	this.velocity = this.velocity.normalised().times(this.brownian.max_speed);
+		// }
+
+		if (this.connection) {
+			const to_connection = this.connection.position.minus(this.position);
+			const to_connection_dist = to_connection.magnitude();
+			const to_connection_direction = to_connection.normalised();
+			const force = this.maxConnectionForce / to_connection_dist;
+			this.velocity = this.velocity.add(to_connection_direction.times(force * this.game.delta));
 		}
+		this.applyFriction();
+		this.distanceTravelled += this.velocity.magnitude() * this.game.delta;
 		this.position = this.position.add(this.velocity.times(this.game.delta));
+
+		if (this.connection && this.masterConnector) {
+			if (this.connection.position.distance(this.position) < 8) {
+				this.main.createStar(this.position.lerp(this.connection.position, 0.5), this, this.connection);
+				this.main.removeDweller(this);
+				this.main.removeDweller(this.connection);
+			}
+		}
+		
 		super.update();
+
+		// Wrap.
+
 		if (this.cell == null) {
 			// we just went off the edge!
 			if (this.position.x < 0) this.position.x += this.game.width;
@@ -36,18 +127,40 @@ class Mote extends GridDweller {
 		}
 	}
 
-
+	applyFriction() {
+		this.velocity = this.velocity.towards(new Vector(0, 0), this.velocity.magnitude() * this.frictionConst);
+	}
 
 	render() {
 		this.canvas.sprite(
 			this.position,
 			'dot_white',
 			{
-				width: 4,
-				height: 4,
-				tint: this.game.textColor
+				width: this.size,
+				height: this.size,
+				tint: this.tint,
+				tintCache: true,
 			}
 		);
+
+		if (this.highlighted || this.selected) {
+			this.canvas.circle(this.position, 16, {
+				fillAlpha: 0.2,
+				strokeAlpha: 1,
+				fillColor: this.megaHighlighted ? this.game.altHighlightColor : this.tint,
+				strokeColor: this.megaHighlighted ? this.game.altHighlightColor : this.tint,
+			});
+		}
+
+		super.render();
+
+		if (!this.debug) return;
+
+		if (this.circle_pos) {
+			this.canvas.circle(this.circle_pos, this.brownian.radius, {fillAlpha: 0, strokeAlpha: 1, strokeColor: '#ff0000'});
+			this.canvas.drawLine(this.position.x, this.position.y, this.circle_pos.x, this.circle_pos.y, '#ff0000', 1, 2);
+			this.canvas.drawLine(this.position.x, this.position.y, this.circle_edge.x, this.circle_edge.y, '#ff00ff', 1, 2);
+		}
 	}
 }
 

@@ -16,6 +16,8 @@ class Game {
 
 		window.josekiLoaded = true;
 
+		window.clearAllCanvases = this.clearAllCanvases.bind(this);
+
 		this.notLoaded = [];
 		
 		this.assetRoot = '$assets/';
@@ -106,6 +108,8 @@ class Game {
 		this.tlogTag('answer_time', true);
 
 		window.tlog = this.tlog.bind(this);
+
+		this.clearIndex = -1;
 	}
 
 	tlogTag(tag, enabled) {
@@ -508,12 +512,16 @@ class Game {
 		});
 	}
 
-	render() {
+	clearAllCanvases() {
 		_.each(this.canvases, (canvas) => {
 			if (canvas.shouldClear) {
 				canvas.clear();
 			}
 		});
+	}
+
+	render() {
+		this.clearAllCanvases();
 		this.state.render();
 		_.each(this.entities, (e) => {
 			e._render();

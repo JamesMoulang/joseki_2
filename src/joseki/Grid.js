@@ -1,6 +1,7 @@
 import Cell from './Cell';
 import Vector from './Vector';
 import _ from './underscore';
+import Maths from './Maths';
 
 class Grid {
 	constructor(x, y, size) {
@@ -51,6 +52,26 @@ class Grid {
 			Math.floor(toPos.y / this.size),
 			exists
 		);
+	}
+
+	forEachDwellersFromWorldPosition(pos, radius, callback) {
+		const min_x = Math.floor((pos.x - radius) / this.size);
+		const min_y = Math.floor((pos.y - radius) / this.size);
+		const max_x = Math.ceil((pos.x + radius) / this.size);
+		const max_y = Math.ceil((pos.y + radius) / this.size);
+
+		for (var x = min_x; x <= max_x; x++) {
+			for (var y = min_y; y <= max_y; y++) {
+				const cell = this.getCell(x, y, false);
+				if (cell) {
+					cell.render = true;
+					_.each(cell.dwellers, (dweller) => {
+						const dist = dweller.position.distance(pos);
+						if (dist <= radius) callback(dweller, dist);
+					});
+				}
+			}
+		}
 	}
 }
 
