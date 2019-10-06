@@ -1,6 +1,7 @@
 import GridDweller from './GridDweller';
 import Vector from '../joseki/Vector';
 import Maths from '../joseki/Maths';
+import Mote from './Mote';
 import GreenMote from './GreenMote';
 import RedMote from './RedMote';
 import BlueMote from './BlueMote';
@@ -16,7 +17,13 @@ class Star extends GridDweller {
 		this.afterShrinkWaitTimer = 30;
 		this.catalyst1 = catalyst1;
 		this.catalyst2 = catalyst2;
-		this.tint = Maths.lerpColor(this.catalyst1.tint, this.catalyst2.tint, 0.5);
+		this.tint = Maths.lerpColor(
+			this.catalyst1 ? this.catalyst1.tint : this.game.brown,
+			this.catalyst2 ? this.catalyst2.tint : this.game.brown,
+			0.5
+		);
+
+		this.size = this.catalyst1 ? 32 : 16;
 
 		this.advanceFrames = false;
 		this.frame = 0;
@@ -43,7 +50,11 @@ class Star extends GridDweller {
 	}
 
 	explosion() {
-		if (this.ingredients('WHITE', 'WHITE')) {
+		if (!this.catalyst1 && !this.catalyst2) {
+			const dweller = this.main.addDweller(new Mote(this.main, 'game', this.position));
+			dweller.velocity = Vector.Random().times(1);
+			this.main.playSound('BloopDelay1', 'sfx', 1, 0.5);
+		} else if (this.ingredients('WHITE', 'WHITE')) {
 			// Create random motes
 			_.loop(4, () => {
 				let gm;
@@ -58,6 +69,7 @@ class Star extends GridDweller {
 
 				this.main.addDweller(gm);
 			});
+			this.main.playSound('Doob5', 'sfx', 1, 0.5);
 		} else if (this.ingredients('BLUE', 'BLUE')) {
 			// Create a puddle.
 			this.cell.water = 3;
@@ -83,6 +95,11 @@ class Star extends GridDweller {
 			_.loop(2, () => {
 				this.main.addDweller(new BrownMote(this.main, 'game', this.position));
 			});
+		} else if (this.ingredients('GREEN', 'GREEN')) {
+			// Create a plant!
+			this.main.createPlant(this.position);
+		} else if (this.ingredients('RED', 'RED')) {
+			this.main.createSun(this.position);
 		} else {
 			// Just spit out the original components.
 			this.addDwellerFromToken(this.catalyst1.token);
@@ -104,6 +121,10 @@ class Star extends GridDweller {
 				break;
 			case 'GREEN':
 				dweller = this.main.addDweller(new GreenMote(this.main, 'game', this.position));
+				break;
+			case 'WHITE':
+				dweller = this.main.addDweller(new Mote(this.main, 'game', this.position));
+				dweller.velocity = Vector.Random().times(1);
 				break;
 			default:
 				console.error('missing a case for', token);
@@ -160,7 +181,7 @@ class Star extends GridDweller {
 				// outer circle
 				this.canvas.circle(
 					this.position,
-					24,
+					this.size / 1.33,
 					{
 						strokeWidth: 4,
 						strokeColor: this.tint,
@@ -171,7 +192,7 @@ class Star extends GridDweller {
 				// inner circle
 				this.canvas.circle(
 					this.position,
-					16,
+					this.size * 0.5,
 					{
 						strokeWidth: 4,
 						fillColor: this.tint,
@@ -184,7 +205,7 @@ class Star extends GridDweller {
 				// outer circle
 				this.canvas.circle(
 					this.position,
-					32,
+					this.size,
 					{
 						strokeWidth: 2,
 						strokeColor: this.tint,

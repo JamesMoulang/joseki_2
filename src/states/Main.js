@@ -5,7 +5,10 @@ import State from '../joseki/State';
 import Grid from '../joseki/Grid';
 
 import Mote from '../entities/Mote';
+import BrownMote from '../entities/BrownMote';
 import Star from '../entities/Star';
+import Plant from '../entities/Plant';
+import Sun from '../entities/Sun';
 
 class Main extends State {
 	constructor() {
@@ -28,7 +31,7 @@ class Main extends State {
 	enter(game) {
 		super.enter(game);
 		this.game.green = '#7FB069';
-		this.game.brown = '#726E60';
+		this.game.brown = '#A499BE';
 		this.canvas = this.game.getCanvas('game');
 		this.grid = new Grid(0, 0, 32);
 		this.grid.populate(this.game.width / this.grid.size, this.game.height / this.grid.size);
@@ -38,6 +41,41 @@ class Main extends State {
 		});
 		this.dwellers = [];
 		this.populate();
+
+		this.tickTimer = 0;
+		this.tickTime = 50;
+
+		this.soundCooldowns = {};
+	}
+
+	// play a sound (but not too frequently...)
+	playSound(sound, layer, cooldown, vol) {
+		if (!this.soundCooldowns[layer]) {
+			this.soundCooldowns[layer] = {};
+		}
+
+		if (!this.soundCooldowns[layer].hasOwnProperty(sound)) {
+			const audio = this.game.audioManager.addAudio(sound, layer)
+			audio.howl._volume = vol;
+			audio.playOnce();
+			this.soundCooldowns[layer][sound] = cooldown;
+		} else {
+			if (this.soundCooldowns[layer][sound] <= 0) {
+				const audio = this.game.audioManager.addAudio(sound, layer)
+				audio.howl._volume = vol;
+				audio.playOnce();
+				this.soundCooldowns[layer][sound] = cooldown;
+			}
+		}
+	}
+
+	updateSoundCooldowns() {
+		_.each(this.soundCooldowns, (layer, k1) => {
+			_.each(layer, (sound, k2) => {
+				this.soundCooldowns[k1][k2] -= this.game.delta;
+				if (this.soundCooldowns[k1][k2] < 0) this.soundCooldowns[k1][k2] = 0;
+			});
+		});
 	}
 
 	populate() {
@@ -45,14 +83,26 @@ class Main extends State {
 			var x = Math.random() * this.game.width;
 			var y = Math.random() * this.game.height;
 
-			const mote = new Mote(this, 'game', new Vector(x, y));
-			this.addDweller(mote);
+			if (Math.random() > 1) {
+				_.loop(4, () => {
+					x = Math.random() * this.game.width;
+					y = Math.random() * this.game.height;
+
+					const mote = new BrownMote(this, 'game', new Vector(x, y));
+					this.addDweller(mote);
+					mote.velocity = new Vector(0, 0);
+				});
+			} else {
+				const mote = new Mote(this, 'game', new Vector(x, y));
+				this.addDweller(mote);
+			}
 		});
 	}
 
 	addDweller(dweller) {
 		this.dwellers.push(dweller);
 		this.game.groups.foreground.push(dweller);
+		return dweller;
 	}
 
 	removeDweller(dweller) {
@@ -61,8 +111,31 @@ class Main extends State {
 		dweller.destroy();
 	}
 
+	createPlant(position) {
+		const plant = new Plant(this, 'game', position);
+		this.dwellers.push(plant);
+		this.game.groups.background.push(plant);
+	}
+
+	createSun(position) {
+		const sun = new Sun(this, 'game', position);
+		this.dwellers.push(sun);
+		this.game.groups.background.push(sun);
+	}
+
 	update() {
 		super.update();
+
+		this.updateSoundCooldowns();
+
+		this.tickTimer += this.game.delta;
+		while (this.tickTimer > this.tickTime) {
+			this.tickTimer -= this.tickTime;
+			_.each(this.dwellers, (dweller) => {
+				dweller.tick();
+			});
+		}
+
 		_.each(this.dwellers, (dweller) => {
 			dweller.highlighted = false;
 		});
@@ -76,19 +149,17 @@ class Main extends State {
 			}
 		});
 
-		if (closest) {
-			if (closest_dist < this.mouseSnapDistance) {
-				closest.highlighted = true;
+		if (closest && closest_dist < this.mouseSnapDistance) {
+			closest.highlighted = true;
 
-				if (this.game.mouseclicked) {
-					closest.selected = true;
-					if (this.selection1) {
-						this.selection2 = closest;
-						this.formConnection(this.selection1, closest);
-					} else {
-						this.selection1 = closest;
-						// closest.megaHighlighted = true;
-					}
+			if (this.game.mouseclicked) {
+				closest.selected = true;
+				if (this.selection1) {
+					this.selection2 = closest;
+					this.formConnection(this.selection1, closest);
+				} else {
+					this.selection1 = closest;
+					// closest.megaHighlighted = true;
 				}
 			}
 		} else if (this.game.mouseclicked) {
@@ -166,22 +237,24 @@ class Main extends State {
 		// Pre render.
 		this.grid.each((cell) => {
 			if (cell.water != 0) {
-				this.canvas.drawRect(
-					cell.position.x,
-					cell.position.y,
-					cell.size,
-					cell.size,
+				this.canvas.sprite(
+					cell.position.add(new Vector(cell.size * 0.5, cell.size * 0.5)),
+					'dot',
 					{
-						strokeAlpha: 0,
-						fillAlpha: 0.2 + Maths.clamp(cell.water / 3) * 0.4,
-						fillColor: this.game.altHighlightColor,
+						width: cell.size * 0.9,
+						height: cell.size * 0.9,
+						tintCache: true,
+						tint: this.game.altHighlightColor
 					}
 				);
 			}
 		});
 
+		return;
+
 		this.grid.each((cell) => {
 			// if (!cell.render) return;
+			// if (cell.dwellers.length != 0) return;
 			this.canvas.drawRect(
 				cell.position.x,
 				cell.position.y,

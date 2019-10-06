@@ -456,7 +456,7 @@ class Game {
 		this.delta = lastFrameTimeElapsed / this.idealFrameTime;
 		if (this.delta < 0) this.delta = 0;
 		this.deltaNoTimescale = lastFrameTimeElapsed / this.idealFrameTime;
-		this.focusTimeScale = Maths.lerp(this.focusTimeScale, this.focus ? 1 : 0, 1);
+		this.focusTimeScale = Maths.lerp(this.focusTimeScale, (this.focus ? 1 : 0), 1);
 		this.delta *= this.timescale * this.focusTimeScale;
 		this.delta *= 0.5;
 		this.lastTimestamp = time;

@@ -54,7 +54,7 @@ class Grid {
 		);
 	}
 
-	forEachDwellersFromWorldPosition(pos, radius, callback) {
+	forEachFromWorldPosition(pos, radius, callback) {
 		const min_x = Math.floor((pos.x - radius) / this.size);
 		const min_y = Math.floor((pos.y - radius) / this.size);
 		const max_x = Math.ceil((pos.x + radius) / this.size);
@@ -64,14 +64,20 @@ class Grid {
 			for (var y = min_y; y <= max_y; y++) {
 				const cell = this.getCell(x, y, false);
 				if (cell) {
-					cell.render = true;
-					_.each(cell.dwellers, (dweller) => {
-						const dist = dweller.position.distance(pos);
-						if (dist <= radius) callback(dweller, dist);
-					});
+					callback(cell);
 				}
 			}
 		}
+	}
+
+	forEachDwellersFromWorldPosition(pos, radius, callback) {
+		this.forEachFromWorldPosition(pos, radius, (cell) => {
+			cell.render = true;
+			_.each(cell.dwellers, (dweller) => {
+				const dist = dweller.position.distance(pos);
+				if (dist <= radius) callback(dweller, dist);
+			});
+		});
 	}
 }
 

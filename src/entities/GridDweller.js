@@ -17,6 +17,25 @@ class GridDweller extends Entity {
 		this.cell.dwellers.push(this);
 
 		this.connections = [];
+		this.subscribers = [];
+	}
+
+	tickSubscribe(count, func) {
+		this.subscribers.push({
+			counter: count,
+			count: count,
+			callback: func,
+		});
+	}
+
+	tick() {
+		_.each(this.subscribers, (sub) => {
+			sub.counter--;
+			if (sub.counter <= 0) {
+				sub.counter += sub.count;
+				sub.callback();
+			}
+		});
 	}
 
 	connect(s2) {
@@ -30,6 +49,8 @@ class GridDweller extends Entity {
 	}
 
 	update() {
+		this.lastCell = this.cell;
+
 		const cell = this.grid.getCellFromWorldPosition(this.position, false);
 		if (cell != this.cell) {
 			if (this.cell) this.cell.dwellers = _.without(this.cell.dwellers, this);
@@ -41,7 +62,7 @@ class GridDweller extends Entity {
 	render() {
 		_.each(this.connections, (s2) => {
 			const alpha = Maths.remap(s2.position.distance(this.position), 0.2, 1, 512, 128);
-			this.canvas.drawLine(this.position.x, this.position.y, s2.position.x, s2.position.y, this.game.textColor, alpha, 2);
+			this.canvas.drawLine(this.position.x, this.position.y, s2.position.x, s2.position.y, this.tint || this.game.textColor, alpha, 2);
 		});
 	}
 }

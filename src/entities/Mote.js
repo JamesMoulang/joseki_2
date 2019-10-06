@@ -2,6 +2,7 @@ import GridDweller from './GridDweller';
 import Vector from '../joseki/Vector';
 import Maths from '../joseki/Maths';
 import TrailDust from './TrailDust';
+import WrapRipple from './WrapRipple';
 
 class Mote extends GridDweller {
 	constructor(main, canvas, position) {
@@ -35,6 +36,8 @@ class Mote extends GridDweller {
 		this.trailEntities = [];
 		this.trailBufferLength = 100;
 		this.trailEntitiesIndex = -1;
+
+		this.connectionTime = 50;
 	}
 
 	connect(s2) {
@@ -99,18 +102,30 @@ class Mote extends GridDweller {
 			const to_connection = this.connection.position.minus(this.position);
 			const to_connection_dist = to_connection.magnitude();
 			const to_connection_direction = to_connection.normalised();
-			const force = this.maxConnectionForce / to_connection_dist;
-			this.velocity = this.velocity.add(to_connection_direction.times(force * this.game.delta));
+			let force = Maths.clamp(this.maxConnectionForce / to_connection_dist, 0, 0.05);
+			
+			let force_vector = to_connection_direction.times(force);
+			let perp = new Vector(-force_vector.y, force_vector.x).times(0.1);
+			force_vector = force_vector.add(perp);
+
+			this.velocity = this.velocity.add(force_vector.times(this.game.delta));
 		}
 		this.applyFriction();
 		this.distanceTravelled += this.velocity.magnitude() * this.game.delta;
 		this.position = this.position.add(this.velocity.times(this.game.delta));
 
 		if (this.connection && this.masterConnector) {
-			if (this.connection.position.distance(this.position) < 8) {
-				this.main.createStar(this.position.lerp(this.connection.position, 0.5), this, this.connection);
-				this.main.removeDweller(this);
-				this.main.removeDweller(this.connection);
+			if (this.connection.position.distance(this.position) < 16) {
+				this.connectionTime -= this.game.delta;
+				this.applyFriction();
+				this.applyFriction();
+				this.applyFriction();
+				this.applyFriction();
+				if (this.connectionTime < 0) {
+					this.main.createStar(this.position.lerp(this.connection.position, 0.5), this, this.connection);
+					this.main.removeDweller(this);
+					this.main.removeDweller(this.connection);
+				}
 			}
 		}
 		
@@ -120,10 +135,30 @@ class Mote extends GridDweller {
 
 		if (this.cell == null) {
 			// we just went off the edge!
-			if (this.position.x < 0) this.position.x += this.game.width;
-			if (this.position.x > this.game.width) this.position.x -= this.game.width;
-			if (this.position.y < 0) this.position.y += this.game.height;
-			if (this.position.y > this.game.height) this.position.y -= this.game.height;
+			if (this.position.x < 0) {
+				this.position.x += this.game.width;
+				new WrapRipple(this.main, 'game', this.lastCell, 'left');
+				const new_cell = this.main.grid.getCellFromWorldPosition(this.position);
+				new WrapRipple(this.main, 'game', new_cell, 'right');
+			}
+			if (this.position.x > this.game.width) {
+				this.position.x -= this.game.width;
+				new WrapRipple(this.main, 'game', this.lastCell, 'right');
+				const new_cell = this.main.grid.getCellFromWorldPosition(this.position);
+				new WrapRipple(this.main, 'game', new_cell, 'left');
+			}
+			if (this.position.y < 0) {
+				this.position.y += this.game.height;
+				new WrapRipple(this.main, 'game', this.lastCell, 'down');
+				const new_cell = this.main.grid.getCellFromWorldPosition(this.position);
+				new WrapRipple(this.main, 'game', new_cell, 'up');
+			}
+			if (this.position.y > this.game.height) {
+				this.position.y -= this.game.height;
+				new WrapRipple(this.main, 'game', this.lastCell, 'up');
+				const new_cell = this.main.grid.getCellFromWorldPosition(this.position);
+				new WrapRipple(this.main, 'game', new_cell, 'down');
+			}
 		}
 	}
 
@@ -140,6 +175,7 @@ class Mote extends GridDweller {
 				height: this.size,
 				tint: this.tint,
 				tintCache: true,
+				alpha: this.alpha,
 			}
 		);
 

@@ -76,6 +76,23 @@ class Preload extends Joseki.State {
 
 		this.game.loadAudio('click', 'audio/click.wav');
 
+		// Load Mike's audio
+		this.game.loadAudio('plip1', 'audio/mike/plip1.wav');
+		this.game.loadAudio('plip2', 'audio/mike/plip2.wav');
+		this.game.loadAudio('plip3', 'audio/mike/plip3.wav');
+		this.game.loadAudio('plip4', 'audio/mike/plip4.wav');
+		this.game.loadAudio('plip5', 'audio/mike/plip5.wav');
+		this.game.loadAudio('plip6', 'audio/mike/plip6.wav');
+		this.game.loadAudio('plip7', 'audio/mike/plip7.wav');
+
+		this.game.loadAudio('BloopDelay1', 'audio/mike/BloopDelay1.wav');
+		this.game.loadAudio('BloopDelay2', 'audio/mike/BloopDelay2.wav');
+		this.game.loadAudio('BloopDelay3', 'audio/mike/BloopDelay3.wav');
+		this.game.loadAudio('BloopDelay4', 'audio/mike/BloopDelay4.wav');
+		this.game.loadAudio('BloopDelay5', 'audio/mike/BloopDelay5.wav');
+
+		this.game.loadAudio('Doob5', 'audio/mike/Doob5.wav');
+
 		// Load English
 		this.game.validLetters = "!;';null;];[;a;b;c;d;e;f;g;h;i;j;k;l;m;n;o;p;q;r;s;t;u;v;w;x;y;z;,;.;/;%; ".split(';');
 		this.game.letterSwaps = {
