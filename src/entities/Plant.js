@@ -16,7 +16,7 @@ class Plant extends GridDweller {
 		this.bump = 1;
 		this.selectable = false;
 		this.aoe = 128;
-		this.health = 1;
+		this.health = 8;
 		this.totalWaterConsumed = 0;
 
 		this.dying = false;
@@ -24,7 +24,7 @@ class Plant extends GridDweller {
 
 		this.tint = Maths.colorLerp(this.game.green, this.game.backColor, 0.33);
 
-		this.tickSubscribe(5, this.updateWater.bind(this));
+		this.tickSubscribe(10, this.updateWater.bind(this));
 	}
 
 	update() {
@@ -109,6 +109,7 @@ class Plant extends GridDweller {
 
 		_.loop(total_brown, () => {
 			const dweller = this.main.addDweller(new BrownMote(this.main, 'game', this.position));
+			dweller.velocity = dweller.velocity.times(1);
 		});
 
 		this.main.removeDweller(this);

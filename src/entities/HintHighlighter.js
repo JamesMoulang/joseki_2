@@ -10,7 +10,7 @@ class HintHighlighter extends Entity {
 		this.showing = false;
 		this.hiding = false;
 		this.alpha = 0;
-		this.showAlpha = 0.75;
+		this.showAlpha = 1;
 		this.canvas = game.getCanvas(canvas);
 		this.tint = this.game.backColor;
 		this.shapes = [];

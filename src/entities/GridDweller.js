@@ -1,6 +1,7 @@
 import _ from '../joseki/underscore';
 import Entity from '../joseki/Entity';
 import Maths from '../joseki/Maths';
+import Vector from '../joseki/Vector';
 
 class GridDweller extends Entity {
 	constructor(main, canvas, position) {
@@ -18,6 +19,8 @@ class GridDweller extends Entity {
 
 		this.connections = [];
 		this.subscribers = [];
+
+		this.size = 16;
 	}
 
 	tickSubscribe(count, func) {
@@ -55,11 +58,23 @@ class GridDweller extends Entity {
 		if (cell != this.cell) {
 			if (this.cell) this.cell.dwellers = _.without(this.cell.dwellers, this);
 			this.cell = cell;
-			if (this.cell) this.cell.dwellers.push(this);
+			if (this.cell) {
+				this.cell.dwellers.push(this);
+			}
 		}
 	}
 
+	draw() {
+
+	}
+
 	render() {
+		this.draw(new Vector(0, 0));
+		if (this.position.x + this.size > this.game.width) this.draw(new Vector(-this.game.width, 0));
+		if (this.position.x - this.size < 0) this.draw(new Vector(this.game.width, 0));
+		if (this.position.y + this.size > this.game.height) this.draw(new Vector(0, -this.game.height));
+		if (this.position.y - this.size < 0) this.draw(new Vector(0, this.game.height));
+
 		_.each(this.connections, (s2) => {
 			const alpha = Maths.remap(s2.position.distance(this.position), 0.2, 1, 512, 128);
 			this.canvas.drawLine(this.position.x, this.position.y, s2.position.x, s2.position.y, this.tint || this.game.textColor, alpha, 2);

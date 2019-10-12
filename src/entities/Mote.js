@@ -3,6 +3,7 @@ import Vector from '../joseki/Vector';
 import Maths from '../joseki/Maths';
 import TrailDust from './TrailDust';
 import WrapRipple from './WrapRipple';
+import _ from '../joseki/underscore';
 
 class Mote extends GridDweller {
 	constructor(main, canvas, position) {
@@ -38,6 +39,8 @@ class Mote extends GridDweller {
 		this.trailEntitiesIndex = -1;
 
 		this.connectionTime = 50;
+
+		this.isMote = true;
 	}
 
 	connect(s2) {
@@ -112,7 +115,7 @@ class Mote extends GridDweller {
 		}
 		this.applyFriction();
 		this.distanceTravelled += this.velocity.magnitude() * this.game.delta;
-		this.position = this.position.add(this.velocity.times(this.game.delta));
+		if (!this.frozen) this.position = this.position.add(this.velocity.times(this.game.delta));
 
 		if (this.connection && this.masterConnector) {
 			if (this.connection.position.distance(this.position) < 16) {
@@ -160,15 +163,36 @@ class Mote extends GridDweller {
 				new WrapRipple(this.main, 'game', new_cell, 'down');
 			}
 		}
+
+		let offsets = [];
+		if (this.position.x + this.size > this.game.width) {
+			offsets.push(new Vector(-this.game.width, 0));
+		}
+		if (this.position.x - this.size < 0) {
+			offsets.push(new Vector(this.game.width, 0));
+		}
+		if (this.position.y + this.size > this.game.height) {
+			offsets.push(new Vector(0, -this.game.height));
+		}
+		if (this.position.y - this.size < 0) {
+			offsets.push(new Vector(0, this.game.height));
+		}
+
+		// this.frozen = offsets.length > 0;
+
+		_.each(offsets, (offset) => {
+			const cell = this.main.grid.getCellFromWorldPosition(this.position.add(offset));
+			cell.ghosts.push({parent: this, offset});
+		});
 	}
 
 	applyFriction() {
 		this.velocity = this.velocity.towards(new Vector(0, 0), this.velocity.magnitude() * this.frictionConst);
 	}
 
-	render() {
+	draw(offset) {
 		this.canvas.sprite(
-			this.position,
+			this.position.add(offset),
 			'dot_white',
 			{
 				width: this.size,
@@ -180,14 +204,16 @@ class Mote extends GridDweller {
 		);
 
 		if (this.highlighted || this.selected) {
-			this.canvas.circle(this.position, 16, {
+			this.canvas.circle(this.position.add(offset), 16, {
 				fillAlpha: 0.2,
 				strokeAlpha: 1,
 				fillColor: this.megaHighlighted ? this.game.altHighlightColor : this.tint,
 				strokeColor: this.megaHighlighted ? this.game.altHighlightColor : this.tint,
 			});
 		}
+	}
 
+	render() {
 		super.render();
 
 		if (!this.debug) return;

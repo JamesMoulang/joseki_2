@@ -5,6 +5,7 @@ class Cell {
 		this.position = position;
 		this.size = size;
 		this.dwellers = [];
+		this.ghosts = [];
 	}
 }
 

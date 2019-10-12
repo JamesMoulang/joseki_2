@@ -16,6 +16,9 @@ class BrownMote extends GreenMote {
 		this.gravity = 0.0001;
 		this.alpha = 0.5;
 		this.showTrail = false;
+		this.canFuseTimer = 200;
+
+		this.fuseTargetsToFormMote = 1;
 	}
 
 	update() {
@@ -30,33 +33,38 @@ class BrownMote extends GreenMote {
 		let close_set = [];
 		let close_dist = 32;
 
-		// Get nearby brown motes.
-		this.main.grid.forEachDwellersFromWorldPosition(this.position, this.aoe, (dweller, dist) => {
-			if (dweller.isBrownMote && !dweller.forming && dweller != this && dist < this.aoe) {
-				const force = Math.pow(1 - (dist / this.aoe), 2);
-				const towards = dweller.position.minus(this.position);
-				this.velocity = this.velocity.add(towards.normalised().times(force * this.gravity * this.game.delta));
+		if (this.canFuseTimer > 0) {
+			this.canFuseTimer -= this.game.delta;
+		} else {
+			// Get nearby brown motes.
+			this.main.grid.forEachDwellersFromWorldPosition(this.position, this.aoe, (dweller, dist) => {
+				if (dweller.isBrownMote && !dweller.forming && dweller != this && dist < this.aoe) {
+					const force = Math.pow(1 - (dist / this.aoe), 2);
+					const towards = dweller.position.minus(this.position);
+					this.velocity = this.velocity.add(towards.normalised().times(force * this.gravity * this.game.delta));
 
-				if (dist < close_dist && close_set.length < 3) {
-					close_set.push(dweller);
+					if (dist < close_dist && close_set.length < this.fuseTargetsToFormMote) {
+						close_set.push(dweller);
+					}
 				}
-			}
-		});
-
-		if (close_set.length == 3) {
-			// Create a new white dweller.
-			this.main.createStar(this.position);
-
-			_.each(close_set, (dweller) => {
-				this.main.removeDweller(dweller);
-				dweller.forming = true;
 			});
-			this.forming = true;
-			this.main.removeDweller(this);
+
+			if (close_set.length == this.fuseTargetsToFormMote) {
+				// Create a new white dweller.
+				this.main.createStar(this.position);
+
+				_.each(close_set, (dweller) => {
+					this.main.removeDweller(dweller);
+					dweller.forming = true;
+				});
+				this.forming = true;
+				this.main.removeDweller(this);
+			}
 		}
 	}
 
 	render() {
+		// this.tint = this.canFuseTimer > 0 ? '#ff9000' : this.game.brown;
 		super.render();
 		if (this.showingAOE) {
 			this.canvas.circle(this.position, this.aoe, {

@@ -32,6 +32,8 @@ class Star extends GridDweller {
 		this.frameAdvanceTimer = 0;
 		this.selectable = false;
 
+		this.isStar = true;
+
 		this.colors = [];
 		_.loop(5, () => {this.colors.push('green')});
 		_.loop(2, () => {this.colors.push('blue')});
@@ -55,7 +57,7 @@ class Star extends GridDweller {
 			dweller.velocity = Vector.Random().times(1);
 			this.main.playSound('BloopDelay1', 'sfx', 1, 0.5);
 		} else if (this.ingredients('WHITE', 'WHITE')) {
-			// Create random motes
+			// Create 4 random motes
 			_.loop(4, () => {
 				let gm;
 				let color = _.pick(this.colors);
@@ -72,7 +74,7 @@ class Star extends GridDweller {
 			this.main.playSound('Doob5', 'sfx', 1, 0.5);
 		} else if (this.ingredients('BLUE', 'BLUE')) {
 			// Create a puddle.
-			this.cell.water = 3;
+			this.cell.water = 6;
 			// each square of water is worth 1 energy.
 		} else if (this.ingredients('BLUE', 'WHITE')) {
 			_.loop(3, () => {
@@ -157,6 +159,7 @@ class Star extends GridDweller {
 				if (this.afterShrinkWaitTimer <= 0) this.advanceFrames = true;
 			}
 		}
+
 		super.update();
 
 		// this.game.debug(this.position.debugString());

@@ -11,9 +11,20 @@ class Grid {
 	}
 
 	populate(w, h) {
+		this.w = w;
+		this.h = h;
+
 		for (var x = 0; x < w; x++) {
 			for (var y = 0; y < h; y++) {
 				this.getCell(x, y);
+			}
+		}
+	}
+
+	eachExists(callback) {
+		for (var x = 0; x < this.w; x++) {
+			for (var y = 0; y < this.h; y++) {
+				callback(this.getCell(x, y));
 			}
 		}
 	}
@@ -70,13 +81,22 @@ class Grid {
 		}
 	}
 
-	forEachDwellersFromWorldPosition(pos, radius, callback) {
+	forEachDwellersFromWorldPosition(pos, radius, dweller_callback, ghost_callback) {
 		this.forEachFromWorldPosition(pos, radius, (cell) => {
 			cell.render = true;
-			_.each(cell.dwellers, (dweller) => {
-				const dist = dweller.position.distance(pos);
-				if (dist <= radius) callback(dweller, dist);
-			});
+			if (dweller_callback) {
+				_.each(cell.dwellers, (dweller) => {
+					const dist = dweller.position.distance(pos);
+					if (dist <= radius) dweller_callback(dweller, dist);
+				});
+			}
+			if (ghost_callback) {
+				_.each(cell.ghosts, (ghost) => {
+					const dweller = ghost.parent;
+					const dist = dweller.position.add(ghost.offset).distance(pos);
+					if (dist <= radius) ghost_callback(ghost, dist);
+				});
+			}
 		});
 	}
 }

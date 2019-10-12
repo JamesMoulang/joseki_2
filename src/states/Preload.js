@@ -6,6 +6,7 @@ import Vector from '../joseki/Vector';
 import Tweens from '../joseki/Tweens';
 import Group from '../joseki/Entities/Group';
 import HintHighlighter from '../entities/HintHighlighter';
+import HintHighlightRect from '../entities/HintHighlightRect';
 import LoadingBar from '../entities/LoadingBar';
 import PaletteSwapper from '../entities/PaletteSwapper';
 import AudioManager from '../entities/AudioManager';
@@ -27,6 +28,9 @@ class Preload extends Joseki.State {
 
 		this.game.hintManager = new HintHighlighter(this.game, 'hint');
 		this.game.addEntity(this.game.hintManager);
+
+		this.game.hintManager.addShape(new HintHighlightRect(0, 0, this.game.width, this.game.height, false));
+		this.game.hintManager.show();
 
 		this.loadingBars = [];
 		this.loadingBars.push(new LoadingBar(

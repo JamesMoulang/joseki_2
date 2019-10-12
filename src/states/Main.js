@@ -32,20 +32,27 @@ class Main extends State {
 		super.enter(game);
 		this.game.green = '#7FB069';
 		this.game.brown = '#A499BE';
+		// this.game.highlightColor = '#F5E663';
+		this.game.waterColor = Maths.colorLerp(this.game.altHighlightColor, this.game.backColor, 0.33);
 		this.canvas = this.game.getCanvas('game');
 		this.grid = new Grid(0, 0, 32);
 		this.grid.populate(this.game.width / this.grid.size, this.game.height / this.grid.size);
 		this.grid.each((cell) => {
 			cell.water = 0;
 			cell.waterMod = 0;
+			cell.displayWater = 0;
+			cell.waterOffset = Vector.Random().times(cell.size * 0.1);
 		});
 		this.dwellers = [];
 		this.populate();
 
 		this.tickTimer = 0;
-		this.tickTime = 50;
+		this.tickTime = 25;
 
 		this.soundCooldowns = {};
+
+		this.spreadWaterTickCount = 1;
+		this.spreadWaterTickCounter = 0;
 	}
 
 	// play a sound (but not too frequently...)
@@ -134,6 +141,12 @@ class Main extends State {
 			_.each(this.dwellers, (dweller) => {
 				dweller.tick();
 			});
+
+			this.spreadWaterTickCounter++;
+			if (this.spreadWaterTickCounter >= this.spreadWaterTickCount) {
+				this.spreadWaterTickCounter = 0;
+				this.spreadWater();
+			}
 		}
 
 		_.each(this.dwellers, (dweller) => {
@@ -142,12 +155,24 @@ class Main extends State {
 
 		let closest = null;
 		let closest_dist = 0;
-		this.grid.forEachDwellersFromWorldPosition(this.game.mousePos, 256, (dweller, dist) => {
-			if (closest == null || dist <= closest_dist && !dweller.selected && dweller.selectable) {
-				closest = dweller;
-				closest_dist = dist;
+		this.grid.forEachDwellersFromWorldPosition(
+			this.game.mousePos,
+			256,
+			(dweller, dist) => {
+				if (closest == null || dist <= closest_dist && !dweller.selected && dweller.selectable) {
+					closest = dweller;
+					closest_dist = dist;
+				}
+			},
+			(ghost, dist) => {
+				const dweller = ghost.parent;
+
+				if (closest == null || dist <= closest_dist && !dweller.selected && dweller.selectable) {
+					closest = dweller;
+					closest_dist = dist;
+				}
 			}
-		});
+		);
 
 		if (closest && closest_dist < this.mouseSnapDistance) {
 			closest.highlighted = true;
@@ -170,7 +195,13 @@ class Main extends State {
 			}
 		}
 
-		this.grid.each((cell) => {
+		this.grid.eachExists((cell) => {
+			cell.ghosts = [];
+		});
+	}
+
+	spreadWater() {
+		this.grid.eachExists((cell) => {
 			if (cell.water > 1) {
 				const count = cell.water - 1;
 				_.loop(count, () => {
@@ -197,7 +228,7 @@ class Main extends State {
 			}
 		});
 
-		this.grid.each((cell) => {
+		this.grid.eachExists((cell) => {
 			if (cell.waterMod != 0) {
 				console.log("modding by", cell.waterMod, cell.x, cell.y);
 				cell.water += cell.waterMod;
@@ -235,25 +266,31 @@ class Main extends State {
 
 	renderGrid() {
 		// Pre render.
-		this.grid.each((cell) => {
-			if (cell.water != 0) {
+		this.grid.eachExists((cell) => {
+			cell.displayWater = Maths.lerp(cell.displayWater, cell.water, 0.075, 0.01);
+
+			if (cell.hasOwnProperty('water') && cell.water != 0) {
+				const width = cell.size * 0.9 * (1 + (cell.displayWater - 1) * 0.5);
+				const height = width;
+
+				console.log(cell);
+
 				this.canvas.sprite(
 					cell.position.add(new Vector(cell.size * 0.5, cell.size * 0.5)),
 					'dot',
 					{
-						width: cell.size * 0.9,
-						height: cell.size * 0.9,
+						width, height,
 						tintCache: true,
-						tint: this.game.altHighlightColor
+						tint: this.game.waterColor
 					}
 				);
 			}
 		});
 
-		return;
+		// return;
 
-		this.grid.each((cell) => {
-			// if (!cell.render) return;
+		this.grid.eachExists((cell) => {
+			if (!cell.render) return;
 			// if (cell.dwellers.length != 0) return;
 			this.canvas.drawRect(
 				cell.position.x,

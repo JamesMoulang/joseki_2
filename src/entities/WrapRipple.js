@@ -6,7 +6,7 @@ class WrapRipple extends Entity {
 	constructor(main, canvas, cell, direction) {
 		super(main.game, canvas);
 		this.cell = cell;
-		this.alpha = 0.75;
+		this.alpha = 0.25;
 		this.direction = direction;
 		this.canvas = this.game.getCanvas(canvas);
 
